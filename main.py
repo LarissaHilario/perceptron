@@ -5,7 +5,7 @@ import numpy as np
 matrix_data = []
 y_desired = []
 weights = []
-learning_rate = 1
+learning_rate = 0.01 
 epochs = 4
 bias = 1
 error_norms = []
@@ -24,9 +24,8 @@ def read_data(name_file):
             entry_weights = create_weights(len(row))
             weights.append(entry_weights)
     matrix_data_w0 = np.insert(np.array(matrix_data), 0, 1, axis=1)
-    
+  
     return matrix_data, y_desired, weights, matrix_data_w0
-
 
 def create_weights(num_weights):
     return [1] + [random.uniform(0, 1) for _ in range(num_weights - 1)]
@@ -35,13 +34,6 @@ def step_function(x):
     return np.where(x >= 0, 1, 0)
 
 def perceptron_output(features, weights, bias):
-    print("Dimensiones de features:", features.shape)
-    print("Dimensiones de weights:", np.array(weights).shape)
-    
-    if len(features) != len(weights):
-        weights = np.transpose(weights)
-        print("se transpuso")
-
     u = np.dot(features, weights) + bias
     y_calculada = step_function(u)
     
@@ -52,6 +44,10 @@ matrix_data, y_desired, weights, matrix_data_w0 = read_data(name_file)
 
 for epoch in range(epochs):
     print(f"\nEpoch {epoch + 1}:")
+    
+   
+    delta_weights = np.zeros_like(weights[epoch])
+    
     for i in range(len(matrix_data_w0)):
         u, y_calculada = perceptron_output(matrix_data_w0[i], weights[epoch], bias)
         error = y_desired[i] - y_calculada
@@ -60,13 +56,21 @@ for epoch in range(epochs):
         y_calculadas.append(y_calculada)
         error_norms.append(error_norm)
 
+        
+        delta_weights += learning_rate * error * matrix_data_w0[i]
+
         print(f"Conjunto de datos {i + 1}:")
         print("  Entradas:", matrix_data_w0[i])
         print("  Pesos:", weights[epoch])
-        print("  u:", u)
         print("  y calculada:", y_calculada)
         print("  Error:", error)
         print("  Norma del error:", error_norm)
+
+   
+    weights[epoch] += delta_weights
+
+    print(f"\nDelta weights en la época {epoch + 1}: {delta_weights}")
+    print(f"Pesos actualizados en la época {epoch + 1}: {weights[epoch]}")
 
 print("\nPesos finales:")
 for epoch, peso in enumerate(weights):
