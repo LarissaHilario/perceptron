@@ -2,6 +2,7 @@ import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt 
+import mplcursors
 
 def read_data(name_file):
     matrix_data = []
@@ -12,7 +13,7 @@ def read_data(name_file):
             row_numbers = [float(number) for number in row[:-1]]
             matrix_data.append(row_numbers)
             y_desired.append(int(row[-1]))
-    # Address VisibleDeprecationWarning:
+    
     matrix_data = np.array(matrix_data, dtype=object)
     return matrix_data, y_desired, np.insert(np.array(matrix_data), 0, 1, axis=1)
 
@@ -34,13 +35,13 @@ def calculate_delta(learning_rate, error_y, features):
 
 def plot_weights_evolution(weights_evolution, epochs):
     
-    num_weights = len(weights_evolution[0][0])  # Número de pesos
-    num_epochs = len(weights_evolution)  # Número de épocas
+    num_weights = len(weights_evolution[0][0])
+    num_epochs = len(weights_evolution) 
+    print(weights_evolution)
 
     plt.figure(figsize=(10, 6))
 
     for i in range(num_weights):
-        # Extraer los valores de peso i para todas las épocas
         weights_list = [epoch[0][i] if isinstance(epoch[0], (list, np.ndarray)) else epoch[i] for epoch in weights_evolution]
         plt.plot(range(1, num_epochs + 1), weights_list, label=f'W{i}', marker='o')
 
@@ -49,7 +50,18 @@ def plot_weights_evolution(weights_evolution, epochs):
     plt.ylabel('Valor del Peso')
     plt.legend()
     plt.grid(True)
+   
     plt.show()
+
+def plot_error_evolution(epochs, error_norms):
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, epochs + 1), error_norms, marker='o')
+    plt.title('Evolución del Error a lo largo de las Épocas')
+    plt.xlabel('Épocas')
+    plt.ylabel('Norma del Error')
+    plt.grid(True)
+    plt.show()
+
 
 
 def update_weights(weights, delta_weights):
@@ -62,6 +74,8 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
     u_values = []
     y_calculadas = []
     weights_evolution = []
+    first_weights = None
+    last_weights= None
 
     print(learning_rate)
 
@@ -72,6 +86,7 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
 
         if epoch == 0:
             weights = [create_weights(len(matrix_data_w0[0]))]
+            first_weights = weights[0]
             first_row_as_array = np.array(weights)
             weights_evolution.append(first_row_as_array)
         else:
@@ -102,23 +117,27 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
 
         if epoch != epochs - 1:  
             weights_evolution.append(weights[-1]) 
+        
+        last_weights = weights_evolution[-1]
+        print('LAS', last_weights)
 
         bias += learning_rate * np.sum(error_y)
 
         error_norms.append(np.linalg.norm(error_y))  
         print(np.linalg.norm(error_y))
 
-
-    # Gráfica de la evolución del error 
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, epochs + 1), error_norms, marker='o')
-    plt.title('Evolución del Error a lo largo de las Épocas')
-    plt.xlabel('Épocas')
-    plt.ylabel('Norma del Error')
-    plt.grid(True)
-    plt.show()
     
+    
+    plot_error_evolution(epochs, error_norms)
     plot_weights_evolution(weights_evolution, epochs)
 
     print("Sesgo final:", bias)
+
+    return {
+        'initial_weights': first_weights,
+        'final_weights': last_weights,
+        'learning_rate': learning_rate,
+        'num_epochs': epochs,
+       
+    }
 

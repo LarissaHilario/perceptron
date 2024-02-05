@@ -3,12 +3,12 @@ from tkinter import filedialog
 import customtkinter
 from neurona.perceptron import read_data, run_perceptron
 
+
 class dialog(customtkinter.CTk):
-    def __init__(self, parent=None):
+     def __init__(self, parent=None, initial_weights=None, final_weights=None, learning_rate=None, permissible_error=0, num_epochs=None, bias=None, error_norms=None, weights_evolution=None):
         super().__init__()
-        self.geometry("360x200")
+        self.geometry("360x400")
         self.title("Resumen")
-        self.transient(parent)
         self.resizable(False, False)
 
         x = (self.winfo_screenwidth() - self.winfo_reqwidth()) / 2 + 600
@@ -19,6 +19,19 @@ class dialog(customtkinter.CTk):
                                                   text_color="#A980D2",
                                                   font=("Arial", 20, "bold"))
         self.LabelDialog.place(x=140, y=20)
+
+        # Display information in the textArea
+        info_text = f"Configuración:\n\n"
+        info_text += f"Pesos Iniciales: {initial_weights}\n"
+        info_text += f"Pesos Finales: {final_weights}\n"
+        info_text += f"Tasa de Aprendizaje: {learning_rate}\n"
+        info_text += f"Error Permisible: {permissible_error}\n"
+        info_text += f"Número de Épocas: {num_epochs}\n"
+
+        self.textArea = customtkinter.CTkTextbox(master=self, width=360, height=200, corner_radius=0)
+        self.textArea.place(x=0, y=80)
+        self.textArea.insert("0.0", info_text)
+
 
 class Ventana(customtkinter.CTk):
     def __init__(self):
@@ -70,7 +83,19 @@ class Ventana(customtkinter.CTk):
         self.boton_Dialog.place(x=265, y=140)
 
     def button_click_event(self):
-        dialog.mainloop()
+        num_epoch = int(self.entrada_Epocas.get())
+        num_learning_rate = float(self.entrada_ETA.get())
+
+        
+        results = run_perceptron(self.matrix_data, self.y_desired, self.matrix_data_w0, num_epoch, num_learning_rate)
+
+       
+        dialog_instance = dialog(self, **results)
+        dialog_instance.mainloop()
+
+
+
+
 
     def abrir_csv(self):
         root = tk.Tk()
