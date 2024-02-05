@@ -1,81 +1,95 @@
-import csv
-import random
-import numpy as np
+import tkinter as tk
+from tkinter import filedialog
+import customtkinter
+from neurona.perceptron import read_data, run_perceptron
 
-matrix_data = []
-y_desired = []
-weights = []
-learning_rate = 1
-epochs = 4
-bias = 1
-error_norms = []
-u_values = []
-y_calculadas = []
+class dialog(customtkinter.CTk):
+    def __init__(self, parent=None):
+        super().__init__()
+        self.geometry("360x200")
+        self.title("Resumen")
+        self.transient(parent)
+        self.resizable(False, False)
 
-name_file = './data/E2.csv'
+        x = (self.winfo_screenwidth() - self.winfo_reqwidth()) / 2 + 600
+        y = (self.winfo_screenheight() - self.winfo_reqheight()) / 2 - 240
+        self.geometry("+%d+%d" % (x, y))
 
-def read_data(name_file):
-    global matrix_data, y_desired, matrix_data_w0
-    matrix_data = []  
-    with open(name_file, 'r') as file_csv:
-        reader_csv = csv.reader(file_csv, delimiter=';')
-        for row in reader_csv:
-            row_numbers = [float(number) for number in row[:-1]]  
-            matrix_data.append(row_numbers)
-            y_desired.append(int(row[-1]))
-    matrix_data_w0 = np.insert(np.array(matrix_data), 0, 1, axis=1)
-    return matrix_data, y_desired, matrix_data_w0
+        self.LabelDialog = customtkinter.CTkLabel(self, text="Resumen",
+                                                  text_color="#A980D2",
+                                                  font=("Arial", 20, "bold"))
+        self.LabelDialog.place(x=140, y=20)
 
-def create_weights(num_weights):
-    return [random.uniform(0, 1) for _ in range(num_weights)]
+class Ventana(customtkinter.CTk):
+    def __init__(self):
+        super().__init__()
 
-def step_function(x):
-    return np.where(x >= 0, 1, 0)
+        self.title("Neurona Artificial")
+        self.geometry("460x260+100+100")
 
-def perceptron_output(features, weights, bias):
-    u = np.dot(features, weights) + bias
-    y_calculada = step_function(u)
-    return u, np.array(y_calculada)
+        self.label_Epocas = customtkinter.CTkLabel(self, text="Épocas",
+                                                   text_color="#A980D2",
+                                                   font=("Arial", 20, "bold"))
+        self.label_Epocas.place(x=30, y=20)
 
-def calculate_delta(learning_rate, error_y, features):
-    error_y_array = np.array(error_y).reshape(-1, 1)
-    return learning_rate * np.dot(error_y_array.T, features)
+        self.entrada_Epocas = customtkinter.CTkEntry(self, placeholder_text="Épocas",
+                                                     width=175, height=35)
+        self.entrada_Epocas.place(x=30, y=55)
 
-matrix_data, y_desired, matrix_data_w0 = read_data(name_file)
+        self.label_ETA = customtkinter.CTkLabel(self, text="ETA",
+                                                text_color="#A980D2",
+                                                font=("Arial", 20, "bold"))
+        self.label_ETA.place(x=30, y=100)
 
-for epoch in range(epochs):
-    error_y = []  
-    print(f"\nEpoch {epoch + 1}:")
-    print (epoch)
-    for i in range(len(matrix_data_w0)):
-        if epoch == 0:
-                weights.append(create_weights(len(matrix_data_w0[0])))
-        else:
-            weights.append(np.transpose(weights[-1])) # Usar los pesos generados después de la delta w de la época anterior
+        self.entrada_ETA = customtkinter.CTkEntry(self, placeholder_text="Eta",
+                                                  width=175, height=35)
+        self.entrada_ETA.place(x=30, y=135)
 
-        u, y_calculada = perceptron_output(matrix_data_w0[i], weights[epoch], bias)
-        y_calculada = np.array(y_calculada)
-        error = y_desired[i] - y_calculada
-        error_norm = np.linalg.norm(error)
-        u_values.append(u)
-        y_calculadas.append(y_calculada)
-        error_y.append(error)
-        error_norms.append(error_norm)
-            
-        print(f"Conjunto de datos {i + 1}:")
-        print("  Entradas:", matrix_data_w0[i])
-        print("  Pesos:", weights[epoch])
-        print("  y calculada:", y_calculada)
-        print("  Error:", error)
-        print("  Norma del error:", error_norm)
-        print(f"  Suma de u para el conjunto {i + 1}: {u}")
-        
-    delta_weights = calculate_delta(learning_rate, error_y, matrix_data_w0)
-    print("  Delta Weights:", delta_weights)
+        self.label_Archivo_CSV = customtkinter.CTkLabel(self, text="Archivo CSV",
+                                                        text_color="#A980D2",
+                                                        font=("Arial", 20, "bold"))
+        self.label_Archivo_CSV.place(x=280, y=65)
 
-    weights[epoch] += delta_weights  
-    print("Nuevos pesos ", weights[epoch])
+        self.Entrada_Archivo_CSV = customtkinter.CTkButton(self, text="Cargar CSV",
+                                                           fg_color="#A980D2", hover_color="#8C63B5",
+                                                           text_color="#FFFFFF", width=150,
+                                                           font=("Arial", 12, "bold"), command=self.abrir_csv)
+        self.Entrada_Archivo_CSV.place(x=265, y=100)
 
-    bias += learning_rate * np.sum(error_y)
+        self.boton_Calculos = customtkinter.CTkButton(self, text="Realizar cálculos",
+                                                      fg_color="#A980D2", hover_color="#8C63B5",
+                                                      command=self.run,
+                                                      text_color="#FFFFFF", width=200,
+                                                      font=("Arial", 12, "bold"), height=30)
+        self.boton_Calculos.place(x=130, y=200)
 
-print("Sesgo final:", bias)
+        self.boton_Dialog = customtkinter.CTkButton(self, text="Abrir resumen",
+                                                    command=self.button_click_event,
+                                                    fg_color="#A980D2", hover_color="#8C63B5",
+                                                    text_color="#FFFFFF", width=150, font=("Arial", 12, "bold"))
+        self.boton_Dialog.place(x=265, y=140)
+
+    def button_click_event(self):
+        dialog.mainloop()
+
+    def abrir_csv(self):
+        root = tk.Tk()
+        root.withdraw()
+
+        ruta_archivo_csv = filedialog.askopenfilename(
+            title="Selecciona un archivo CSV", filetypes=[("Archivos CSV", "*.csv")]
+        )
+
+        if ruta_archivo_csv:
+            print(f"Archivo CSV seleccionado: {ruta_archivo_csv}")
+            self.matrix_data, self.y_desired, self.matrix_data_w0 = read_data(ruta_archivo_csv)
+
+    def run(self):
+        num_epoch = int(self.entrada_Epocas.get())
+        num_learning_rate = float(self.entrada_ETA.get())
+        run_perceptron(self.matrix_data, self.y_desired, self.matrix_data_w0, num_epoch, num_learning_rate)
+
+
+Ventana = Ventana()
+Ventana.configure(fg_color="#EFECF3")
+Ventana.mainloop()
