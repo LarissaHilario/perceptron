@@ -15,7 +15,7 @@ y_calculadas = []
 name_file = './data/E2.csv'
 
 def read_data(name_file):
-    global matrix_data, weights
+    global matrix_data, y_desired, matrix_data_w0
     matrix_data = []  
     with open(name_file, 'r') as file_csv:
         reader_csv = csv.reader(file_csv, delimiter=';')
@@ -23,10 +23,8 @@ def read_data(name_file):
             row_numbers = [float(number) for number in row[:-1]]  
             matrix_data.append(row_numbers)
             y_desired.append(int(row[-1]))
-            entry_weights = create_weights(np.array(matrix_data).shape[1] + 1)
-            weights.append(entry_weights)
     matrix_data_w0 = np.insert(np.array(matrix_data), 0, 1, axis=1)
-    return matrix_data, y_desired, weights, matrix_data_w0
+    return matrix_data, y_desired, matrix_data_w0
 
 def create_weights(num_weights):
     return [random.uniform(0, 1) for _ in range(num_weights)]
@@ -43,13 +41,18 @@ def calculate_delta(learning_rate, error_y, features):
     error_y_array = np.array(error_y).reshape(-1, 1)
     return learning_rate * np.dot(error_y_array.T, features)
 
-
-matrix_data, y_desired, weights, matrix_data_w0 = read_data(name_file)
+matrix_data, y_desired, matrix_data_w0 = read_data(name_file)
 
 for epoch in range(epochs):
     error_y = []  
     print(f"\nEpoch {epoch + 1}:")
+    print (epoch)
     for i in range(len(matrix_data_w0)):
+        if epoch == 0:
+                weights.append(create_weights(len(matrix_data_w0[0])))
+        else:
+            weights.append(np.transpose(weights[-1])) # Usar los pesos generados después de la delta w de la época anterior
+
         u, y_calculada = perceptron_output(matrix_data_w0[i], weights[epoch], bias)
         y_calculada = np.array(y_calculada)
         error = y_desired[i] - y_calculada
@@ -58,7 +61,7 @@ for epoch in range(epochs):
         y_calculadas.append(y_calculada)
         error_y.append(error)
         error_norms.append(error_norm)
-        
+            
         print(f"Conjunto de datos {i + 1}:")
         print("  Entradas:", matrix_data_w0[i])
         print("  Pesos:", weights[epoch])
@@ -72,6 +75,7 @@ for epoch in range(epochs):
 
     weights[epoch] += delta_weights  
     print("Nuevos pesos ", weights[epoch])
+
     bias += learning_rate * np.sum(error_y)
 
 print("Sesgo final:", bias)
