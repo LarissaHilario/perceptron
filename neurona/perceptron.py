@@ -12,8 +12,10 @@ def read_data(name_file):
             row_numbers = [float(number) for number in row[:-1]]
             matrix_data.append(row_numbers)
             y_desired.append(int(row[-1]))
-    matrix_data_w0 = np.insert(np.array(matrix_data), 0, 1, axis=1)
-    return matrix_data, y_desired, matrix_data_w0
+    # Address VisibleDeprecationWarning:
+    matrix_data = np.array(matrix_data, dtype=object)
+    return matrix_data, y_desired, np.insert(np.array(matrix_data), 0, 1, axis=1)
+
 
 def create_weights(num_weights):
     return [random.uniform(0, 1) for _ in range(num_weights)]
@@ -29,6 +31,30 @@ def perceptron_output(features, weights, bias):
 def calculate_delta(learning_rate, error_y, features):
     error_y_array = np.array(error_y).reshape(-1, 1)
     return learning_rate * np.dot(error_y_array.T, features)
+
+def plot_weights_evolution(weights_evolution, epochs):
+    
+    num_weights = len(weights_evolution[0][0])  # Número de pesos
+    num_epochs = len(weights_evolution)  # Número de épocas
+
+    plt.figure(figsize=(10, 6))
+
+    for i in range(num_weights):
+        # Extraer los valores de peso i para todas las épocas
+        weights_list = [epoch[0][i] if isinstance(epoch[0], (list, np.ndarray)) else epoch[i] for epoch in weights_evolution]
+        plt.plot(range(1, num_epochs + 1), weights_list, label=f'W{i}', marker='o')
+
+    plt.title('Evolución de los Pesos a lo largo de las Épocas')
+    plt.xlabel('Épocas')
+    plt.ylabel('Valor del Peso')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
+def update_weights(weights, delta_weights):
+    return weights + delta_weights
+
 
 def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate):
     bias = 1
@@ -46,7 +72,8 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
 
         if epoch == 0:
             weights = [create_weights(len(matrix_data_w0[0]))]
-            weights_evolution.append(weights)
+            first_row_as_array = np.array(weights)
+            weights_evolution.append(first_row_as_array)
         else:
             weights = np.vstack([weights, np.transpose(weights[-1])])
 
@@ -70,7 +97,7 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
         delta_weights = calculate_delta(learning_rate, error_y, matrix_data_w0)
         print("  Delta Weights:", delta_weights)
 
-        weights += delta_weights
+        weights = update_weights(weights, delta_weights)
         print("Nuevos pesos ", weights[-1])
 
         if epoch != epochs - 1:  
@@ -90,18 +117,8 @@ def run_perceptron(matrix_data, y_desired, matrix_data_w0, epochs, learning_rate
     plt.ylabel('Norma del Error')
     plt.grid(True)
     plt.show()
+    
+    plot_weights_evolution(weights_evolution, epochs)
 
-    # Gráfica de la evolución de los pesos
-    weights_evolution = np.array(weights_evolution).T  
-    print(weights_evolution)
-    plt.figure(figsize=(10, 6))
-    for i, weight in enumerate(weights_evolution):
-        weight = np.ravel(weight) 
-        plt.plot(range(1, epochs + 1), weight, label=f'W{i}', marker='o')
-    plt.title('Evolución de los Pesos a lo largo de las Épocas')
-    plt.xlabel('Épocas')
-    plt.ylabel('Valor del Peso')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
     print("Sesgo final:", bias)
+
