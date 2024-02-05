@@ -20,7 +20,7 @@ class dialog(customtkinter.CTk):
                                                   font=("Arial", 20, "bold"))
         self.LabelDialog.place(x=140, y=20)
 
-        # Display information in the textArea
+
         info_text = f"Configuración:\n\n"
         info_text += f"Pesos Iniciales: {initial_weights}\n"
         info_text += f"Pesos Finales: {final_weights}\n"
@@ -92,10 +92,6 @@ class Ventana(customtkinter.CTk):
        
         dialog_instance = dialog(self, **results)
         dialog_instance.mainloop()
-
-
-
-
 
     def abrir_csv(self):
         root = tk.Tk()
